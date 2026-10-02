@@ -1,0 +1,23 @@
+{
+  "id": "com.dynag.posture.phone",
+  "name": "GM Posture",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "bridgeVersion": "2.0",
+  "permissions": [
+    { "name": "storage", "required": true },
+    { "name": "device.info", "required": true },
+    { "name": "device.messaging", "required": true, "scope": { "channels": [20559, 20549] } },
+    { "name": "device.events", "required": false, "scope": { "types": ["connection"] } }
+  ],
+  "deviceRequirements": {
+    "preferredPluginId": "com.dynag.posture.glass",
+    "requiredPluginId": "com.dynag.posture.glass",
+    "minPluginVersion": "1",
+    "protocols": [
+      { "id": "gm.posture", "minVersion": "1.0" }
+    ]
+  },
+  "schemaVersion": 2,
+  "permissionPolicyVersion": 1
+}

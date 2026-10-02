@@ -76,13 +76,26 @@ typedef struct {
     uint32_t cooldown_ms;
     uint32_t sample_elapsed_ms;
     uint16_t alert_count;
-    uint8_t language; /* 0 = French (default), 1 = English */
+    uint8_t language; /* 0=fr 1=en 2=es 3=it 4=de 5=zh-CN */
 } posture_t;
 
-/* Picks the French or English string depending on the detected UI locale. */
-#define L(fr_str, en_str) (po.language != 0U ? (en_str) : (fr_str))
+/* Picks the string for the detected UI locale. */
+#define L(fr_str, en_str, es_str, it_str, de_str, zh_str) \
+    (po.language == 1U ? (en_str) : po.language == 2U ? (es_str) : \
+     po.language == 3U ? (it_str) : po.language == 4U ? (de_str) : \
+     po.language == 5U ? (zh_str) : (fr_str))
 
 static posture_t po;
+
+static uint8_t posture_detect_language(const char *locale)
+{
+    if (locale[0] == 'e' && locale[1] == 'n') return 1U;
+    if (locale[0] == 'e' && locale[1] == 's') return 2U;
+    if (locale[0] == 'i' && locale[1] == 't') return 3U;
+    if (locale[0] == 'd' && locale[1] == 'e') return 4U;
+    if (locale[0] == 'z' && locale[1] == 'h') return 5U;
+    return 0U;
+}
 
 #define number gm_plugin_lvgl_style_number
 #define color gm_plugin_lvgl_style_color
@@ -162,10 +175,10 @@ static void refresh_display(void)
 
     if (!po.monitoring) {
         po.ui->label_set_text(po.status_label,
-            L("En attente du telephone...", "Waiting for the phone..."));
+            L("En attente du telephone...", "Waiting for the phone...", "Esperando al teléfono...", "In attesa del telefono...", "Warte auf das Telefon...", "正在等待手机..."));
         set_style(po.status_label, GM_PLUGIN_LVGL_STYLE_TEXT_COLOR, color(0x90));
         po.ui->label_set_text(po.hint_label,
-            L("Active le suivi depuis le telephone", "Enable tracking on the phone"));
+            L("Active le suivi depuis le telephone", "Enable tracking on the phone", "Activa el seguimiento en el teléfono", "Attiva il monitoraggio sul telefono", "Aktiviere die Überwachung am Telefon", "请在手机上启用追踪"));
         po.ui->label_set_text(po.stats_label, "");
         position_knob();
         return;
@@ -173,32 +186,36 @@ static void refresh_display(void)
 
     if (!po.calibrated) {
         po.ui->label_set_text(po.status_label,
-            L("Calibration requise", "Calibration needed"));
+            L("Calibration requise", "Calibration needed", "Calibración necesaria", "Calibrazione necessaria", "Kalibrierung nötig", "需要校准"));
         set_style(po.status_label, GM_PLUGIN_LVGL_STYLE_TEXT_COLOR, color(0xD0));
         po.ui->label_set_text(po.hint_label,
             L("Tiens-toi droit puis appuie sur le bouton",
-              "Sit up straight then press the button"));
+              "Sit up straight then press the button",
+              "Siéntate derecho y pulsa el botón",
+              "Siediti dritto e premi il pulsante",
+              "Sitz gerade und drücke die Taste",
+              "坐直后按下按钮"));
         po.ui->label_set_text(po.stats_label, "");
         position_knob();
         return;
     }
 
     if (po.alert_active) {
-        po.ui->label_set_text(po.status_label, L("REDRESSE-TOI !", "SIT UP STRAIGHT!"));
+        po.ui->label_set_text(po.status_label, L("REDRESSE-TOI !", "SIT UP STRAIGHT!", "¡SIÉNTATE DERECHO!", "STAI DRITTO!", "SITZ GERADE!", "坐直！"));
         set_style(po.status_label, GM_PLUGIN_LVGL_STYLE_TEXT_COLOR, color(0xFF));
     } else if (posture_is_bad()) {
-        po.ui->label_set_text(po.status_label, L("Corrige ta posture", "Fix your posture"));
+        po.ui->label_set_text(po.status_label, L("Corrige ta posture", "Fix your posture", "Corrige tu postura", "Correggi la postura", "Korrigiere deine Haltung", "纠正姿势"));
         set_style(po.status_label, GM_PLUGIN_LVGL_STYLE_TEXT_COLOR, color(0xD0));
     } else {
-        po.ui->label_set_text(po.status_label, L("Bonne posture", "Good posture"));
+        po.ui->label_set_text(po.status_label, L("Bonne posture", "Good posture", "Buena postura", "Buona postura", "Gute Haltung", "姿势良好"));
         set_style(po.status_label, GM_PLUGIN_LVGL_STYLE_TEXT_COLOR, color(0xF0));
     }
 
-    po.libc->snprintf(text, sizeof(text), L("Rappels : %u", "Reminders: %u"),
+    po.libc->snprintf(text, sizeof(text), L("Rappels : %u", "Reminders: %u", "Avisos: %u", "Avvisi: %u", "Hinweise: %u", "提醒：%u"),
                        (unsigned int)po.alert_count);
     po.ui->label_set_text(po.stats_label, text);
     po.ui->label_set_text(po.hint_label,
-        L("Bouton : calibrer la posture", "Button: calibrate posture"));
+        L("Bouton : calibrer la posture", "Button: calibrate posture", "Botón: calibrar postura", "Pulsante: calibra postura", "Taste: Haltung kalibrieren", "按钮：校准姿势"));
     position_knob();
 }
 
@@ -321,9 +338,8 @@ static gm_plugin_result_t posture_start(void *context)
 
     po.language = 0U;
     if (po.host->locale_get != 0 &&
-        po.host->locale_get(locale) == GM_PLUGIN_OK &&
-        locale[0] == 'e' && locale[1] == 'n')
-        po.language = 1U;
+        po.host->locale_get(locale) == GM_PLUGIN_OK)
+        po.language = posture_detect_language(locale);
 
     if (po.host->display_get_info(&display) != GM_PLUGIN_OK ||
         display.width <= SCREEN_MARGIN * 2U ||

@@ -10,6 +10,9 @@ import {
   encodeConfig,
   encodeRequestCalibrate,
 } from './protocol.js';
+import { detectLocale, getStrings } from './translations.js';
+
+const S = getStrings(detectLocale());
 
 const STORAGE_KEY = 'posture';
 
@@ -37,6 +40,22 @@ let connected = false;
 function setStatus(text, state = '') {
   statusEl.textContent = text;
   statusEl.className = `status ${state}`.trim();
+}
+
+function applyStrings() {
+  document.documentElement.lang = detectLocale();
+  document.querySelector('#app-title').textContent = S.appTitle;
+  document.querySelector('#enable-label').textContent = S.enableTracking;
+  document.querySelector('#threshold-label').textContent = S.thresholdLabel;
+  document.querySelector('#duration-label').textContent = S.durationLabel;
+  document.querySelector('#unit-seconds').textContent = S.unitSeconds;
+  document.querySelector('#calibrate-button').textContent = S.calibrate;
+  document.querySelector('#calibrate-hint').textContent = S.calibrateHint;
+  document.querySelector('#section-reminders').textContent = S.sectionReminders;
+  document.querySelector('#stat-today').textContent = S.statToday;
+  document.querySelector('#stat-week').textContent = S.statWeek;
+  lastAlertEl.textContent = S.noReminder;
+  setStatus(S.statusStarting);
 }
 
 function todayKey() {
@@ -125,7 +144,7 @@ calibrateButton.addEventListener('click', async () => {
   if (!connected) return;
   try {
     await gm.plugin.sendMessage(SETTINGS_CHANNEL, encodeRequestCalibrate());
-    lastAlertEl.textContent = 'Calibration demandée…';
+    lastAlertEl.textContent = S.calibrateRequested;
   } catch (error) {
     setStatus(error.message || String(error), 'error');
   }
@@ -136,7 +155,7 @@ const offMessages = gm.plugin.onMessage((message) => {
   const decoded = decodeEvent(message.data);
   if (!decoded) return;
   if (decoded.event === EVENT_CALIBRATED) {
-    lastAlertEl.textContent = `Posture de référence calibrée (${decoded.baseline}°).`;
+    lastAlertEl.textContent = S.calibrated(decoded.baseline);
     return;
   }
   if (decoded.event === EVENT_ALERT) {
@@ -144,7 +163,7 @@ const offMessages = gm.plugin.onMessage((message) => {
     history[key] = (history[key] || 0) + 1;
     void persistState();
     renderStats();
-    lastAlertEl.textContent = `Dernier rappel à ${formatTime(new Date().toISOString())} (angle ${decoded.pitch}°).`;
+    lastAlertEl.textContent = S.lastAlert(formatTime(new Date().toISOString()), decoded.pitch);
   }
 });
 
@@ -152,18 +171,19 @@ async function start() {
   try {
     await gm.ready();
     await loadState();
+    applyStrings();
     renderStats();
     renderConfig();
     const info = await gm.device.getInfo();
     connected = Boolean(info.connected);
-    setStatus(connected ? 'Lunettes connectées' : 'Lunettes déconnectées', connected ? 'ready' : 'error');
+    setStatus(connected ? S.statusConnected : S.statusDisconnected, connected ? 'ready' : 'error');
     renderConfig();
     // Push the saved settings so the glasses resume the chosen behavior.
     await sendConfig();
     await gm.device.subscribeEvents(['connection']);
     gm.device.onConnection((event) => {
       connected = Boolean(event.connected);
-      setStatus(connected ? 'Lunettes connectées' : 'Lunettes déconnectées', connected ? 'ready' : 'error');
+      setStatus(connected ? S.statusConnected : S.statusDisconnected, connected ? 'ready' : 'error');
       renderConfig();
       if (connected) void sendConfig();
     });

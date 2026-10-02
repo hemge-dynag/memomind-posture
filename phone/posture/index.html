@@ -10,7 +10,7 @@
   </head>
   <body>
     <header class="app-header">
-      <h1>Rappel de posture</h1>
+      <h1 id="app-title">Rappel de posture</h1>
       <span id="status" class="status">Démarrage…</span>
     </header>
 
@@ -18,36 +18,36 @@
       <section class="toggle-row">
         <label class="switch">
           <input type="checkbox" id="enable-toggle">
-          <span>Activer le suivi</span>
+          <span id="enable-label">Activer le suivi</span>
         </label>
       </section>
 
       <section class="settings">
         <div class="setting">
-          <label for="threshold">Angle de détection : <span id="threshold-value">15</span>°</label>
+          <label for="threshold"><span id="threshold-label">Angle de détection :</span> <span id="threshold-value">15</span>°</label>
           <input type="range" id="threshold" min="5" max="45" step="1" value="15">
         </div>
         <div class="setting">
-          <label for="duration">Durée avant rappel : <span id="duration-value">5</span> s</label>
+          <label for="duration"><span id="duration-label">Durée avant rappel :</span> <span id="duration-value">5</span> <span id="unit-seconds">s</span></label>
           <input type="range" id="duration" min="2" max="30" step="1" value="5">
         </div>
       </section>
 
       <section class="calibrate">
         <button id="calibrate-button">Calibrer la posture</button>
-        <p class="hint">Tiens-toi droit au moment de calibrer. Sur les lunettes, tu peux aussi appuyer sur le bouton.</p>
+        <p id="calibrate-hint" class="hint">Tiens-toi droit au moment de calibrer. Sur les lunettes, tu peux aussi appuyer sur le bouton.</p>
       </section>
 
       <section class="stats">
-        <h2>Rappels</h2>
+        <h2 id="section-reminders">Rappels</h2>
         <div class="stat-grid">
           <div class="stat">
             <span id="today-count" class="stat-value">0</span>
-            <span class="stat-label">aujourd'hui</span>
+            <span id="stat-today" class="stat-label">aujourd'hui</span>
           </div>
           <div class="stat">
             <span id="week-count" class="stat-value">0</span>
-            <span class="stat-label">7 derniers jours</span>
+            <span id="stat-week" class="stat-label">7 derniers jours</span>
           </div>
         </div>
         <p id="last-alert" class="hint">Aucun rappel pour le moment.</p>
